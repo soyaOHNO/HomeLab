@@ -1,0 +1,11 @@
+user esp32
+topic read home/aircon/aircon-01/set
+topic write home/aircon/aircon-01/state
+topic write home/aircon/aircon-01/telemetry
+topic write home/aircon/aircon-01/availability
+
+user server
+topic write home/aircon/aircon-01/set
+topic read home/aircon/aircon-01/state
+topic read home/aircon/aircon-01/telemetry
+topic read home/aircon/aircon-01/availability

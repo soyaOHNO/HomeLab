@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10141c">
+  <title>Home Aircon</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 20px;
+      color: #f4f7fb;
+      background:
+        radial-gradient(circle at top, #26364c 0, #10141c 45%, #090c11 100%);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    .remote {
+      width: min(100%, 430px);
+      margin: auto;
+      padding: 24px;
+      border: 1px solid #344258;
+      border-radius: 28px;
+      background: rgba(20, 27, 38, 0.94);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .status {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      color: #aeb8c8;
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #697386;
+    }
+
+    .dot.online {
+      background: #45df8b;
+      box-shadow: 0 0 12px #45df8b;
+    }
+
+    .sensor {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      padding: 17px;
+      border: 1px solid #344258;
+      border-radius: 18px;
+      background: #171e29;
+    }
+    .sensor-card {
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .sensor-card:hover {
+      border-color: #4f9dff;
+    }
+
+    .sensor-card:active {
+      transform: scale(0.98);
+    }
+
+    .history-hint {
+      margin-top: 8px;
+      color: #5fa8ff;
+      font-size: 11px;
+    }
+
+    .history-modal[hidden] {
+      display: none;
+    }
+
+    .history-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .history-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    .history-panel {
+      position: relative;
+      width: min(100%, 620px);
+      max-height: 88vh;
+      padding: 22px;
+      border: 1px solid #3b4a60;
+      border-radius: 25px 25px 0 0;
+      background: #131a24;
+      box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-header h2 {
+      margin: 3px 0 14px;
+    }
+
+    .close-button {
+      width: 44px;
+      min-height: 44px;
+      border-radius: 50%;
+      font-size: 25px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 310px;
+      margin-top: 18px;
+      padding: 12px;
+      border: 1px solid #2d394b;
+      border-radius: 16px;
+      background: #0d121a;
+    }
+
+    #historyChart {
+      width: 100%;
+      height: 100%;
+    }
+
+    .chart-message {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #8d9aae;
+      pointer-events: none;
+    }
+
+    .label {
+      color: #91a0b5;
+      font-size: 12px;
+    }
+
+    .value {
+      margin-top: 5px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .setting {
+      margin-top: 16px;
+    }
+
+    .setting > label {
+      display: block;
+      margin-bottom: 7px;
+      color: #aeb8c8;
+      font-size: 13px;
+    }
+
+    select {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #3b4a60;
+      border-radius: 13px;
+      color: white;
+      background: #111721;
+      font-size: 16px;
+    }
+
+    .temperature-control {
+      display: grid;
+      grid-template-columns: 54px 1fr 54px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button {
+      min-height: 50px;
+      border: 0;
+      border-radius: 14px;
+      color: white;
+      background: #334156;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .set-temperature {
+      text-align: center;
+      font-size: 31px;
+      font-weight: 700;
+    }
+
+    .switches {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .switch {
+      padding: 14px;
+      border: 1px solid #344258;
+      border-radius: 14px;
+      background: #171e29;
+    }
+
+    .switch label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    input[type="checkbox"] {
+      width: 21px;
+      height: 21px;
+      accent-color: #3994ff;
+    }
+
+    .actions {
+      display: grid;
+      gap: 11px;
+      margin-top: 22px;
+    }
+
+    .apply {
+      background: linear-gradient(135deg, #1479ff, #39a4ff);
+      font-weight: 700;
+    }
+
+    .power {
+      background: #273244;
+      font-weight: 700;
+    }
+
+    .power.on {
+      background: linear-gradient(135deg, #d83b4b, #ff625b);
+    }
+
+    .message {
+      min-height: 20px;
+      margin-top: 14px;
+      text-align: center;
+      color: #9ba8ba;
+      font-size: 13px;
+    }
+
+    .note {
+      margin-top: 10px;
+      color: #6f7d91;
+      text-align: center;
+      font-size: 11px;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="remote">
+    <header>
+      <h1>エアコン</h1>
+
+      <div class="status">
+        <span id="statusDot" class="dot"></span>
+        <span id="statusText">確認中</span>
+      </div>
+    </header>
+
+    <div id="historyModal" class="history-modal" hidden>
+      <div id="historyBackdrop" class="history-backdrop"></div>
+
+      <section class="history-panel">
+        <header class="history-header">
+          <div>
+            <div class="label">測定履歴</div>
+            <h2 id="historyTitle">室温</h2>
+          </div>
+
+          <button id="closeHistory" class="close-button" type="button">
+            ×
+          </button>
+        </header>
+
+        <select id="historyRange">
+          <option value="1">過去1時間</option>
+          <option value="6">過去6時間</option>
+          <option value="24" selected>過去24時間</option>
+          <option value="168">過去7日間</option>
+          <option value="720">過去30日間</option>
+        </select>
+
+        <div class="chart-container">
+          <canvas id="historyChart"></canvas>
+          <div id="chartMessage" class="chart-message"></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="sensor">
+      <div
+        id="temperatureCard"
+        class="card sensor-card"
+        role="button"
+        tabindex="0"
+      >
+        <div class="label">室温</div>
+        <div id="roomTemperature" class="value">--.-°</div>
+        <div class="history-hint">履歴を見る</div>
+      </div>
+    
+      <div
+        id="humidityCard"
+        class="card sensor-card"
+        role="button"
+        tabindex="0"
+      >
+        <div class="label">湿度</div>
+        <div id="humidity" class="value">--%</div>
+        <div class="history-hint">履歴を見る</div>
+      </div>
+    </section>
+
+    <section class="setting">
+      <label for="mode">運転モード</label>
+      <select id="mode">
+        <option value="auto">自動</option>
+        <option value="cool">冷房</option>
+        <option value="dry">除湿</option>
+        <option value="heat">暖房</option>
+        <option value="fan">送風</option>
+      </select>
+    </section>
+
+    <section class="setting">
+      <label>設定温度</label>
+
+      <div class="temperature-control">
+        <button id="tempDown" type="button">−</button>
+        <div id="setTemperature" class="set-temperature">24°C</div>
+        <button id="tempUp" type="button">＋</button>
+      </div>
+    </section>
+
+    <section class="setting">
+      <label for="fan">風量</label>
+      <select id="fan">
+        <option value="auto">自動</option>
+        <option value="min">静か</option>
+        <option value="low">弱</option>
+        <option value="medium">中</option>
+        <option value="high">強</option>
+        <option value="max">最大</option>
+      </select>
+    </section>
+
+    <section class="setting">
+      <label for="swing">風向（上下）</label>
+      <select id="swing">
+        <option value="auto">自動</option>
+        <option value="highest">いちばん上</option>
+        <option value="high">上</option>
+        <option value="middle">中央</option>
+        <option value="low">下</option>
+        <option value="lowest">いちばん下</option>
+      </select>
+    </section>
+
+    <section class="switches">
+      <div class="switch">
+        <label>
+          静音
+          <input id="quiet" type="checkbox">
+        </label>
+      </div>
+
+      <div class="switch">
+        <label>
+          パワフル
+          <input id="powerful" type="checkbox">
+        </label>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button id="applyButton" class="apply" type="button">
+        設定を送信
+      </button>
+
+      <button id="powerButton" class="power" type="button">
+        運転開始
+      </button>
+    </section>
+
+    <div id="message" class="message"></div>
+    <div id="rssi" class="note">Wi-Fi: -- dBm</div>
+    <div class="note">運転状態は最後に送信した設定です</div>
+  </main>
+
+  <script>
+    const byId = (id) => document.getElementById(id);
+
+    let setTemperature = 24;
+    let currentPower = false;
+    let editing = false;
+    let sending = false;
+
+    function setMessage(text, isError = false) {
+      const element = byId("message");
+      element.textContent = text;
+      element.style.color = isError ? "#ff7373" : "#8fe3b5";
+    }
+
+    function updateTemperatureDisplay() {
+      byId("setTemperature").textContent = `${setTemperature}°C`;
+    }
+
+    function updatePowerButton() {
+      const button = byId("powerButton");
+
+      if (currentPower) {
+        button.textContent = "運転停止";
+        button.classList.add("on");
+      } else {
+        button.textContent = "運転開始";
+        button.classList.remove("on");
+      }
+    }
+
+    async function sendCommand(command) {
+      if (sending) return;
+
+      sending = true;
+      setMessage("送信中...");
+
+      try {
+        const response = await fetch("/api/aircon", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(command)
+        });
+
+        if (!response.ok) {
+          const body = await response.text();
+          throw new Error(body || `HTTP ${response.status}`);
+        }
+
+        editing = false;
+        setMessage("エアコンに送信しました");
+
+        setTimeout(refreshStatus, 400);
+      } catch (error) {
+        setMessage(`送信失敗: ${error.message}`, true);
+      } finally {
+        sending = false;
+      }
+    }
+
+    async function refreshStatus() {
+      try {
+        const response = await fetch("/api/aircon", {
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const online = data.availability === "online";
+
+        byId("statusDot").classList.toggle("online", online);
+        byId("statusText").textContent =
+          online ? "ESP32 オンライン" : "ESP32 オフライン";
+
+        const telemetry = data.telemetry || {};
+
+        byId("roomTemperature").textContent =
+          Number.isFinite(telemetry.temperature)
+            ? `${telemetry.temperature.toFixed(1)}°`
+            : "--.-°";
+
+        byId("humidity").textContent =
+          Number.isFinite(telemetry.humidity)
+            ? `${telemetry.humidity.toFixed(0)}%`
+            : "--%";
+
+        byId("rssi").textContent =
+          Number.isFinite(telemetry.rssi)
+            ? `Wi-Fi: ${telemetry.rssi} dBm`
+            : "Wi-Fi: -- dBm";
+
+        const state = data.state;
+
+        if (state) {
+          currentPower = Boolean(state.power);
+          updatePowerButton();
+
+          if (!editing) {
+            byId("mode").value = state.mode ?? "cool";
+            setTemperature = state.temperature ?? 24;
+            byId("fan").value = state.fan ?? "auto";
+            byId("swing").value = state.swing_vertical ?? "auto";
+            byId("quiet").checked = Boolean(state.quiet);
+            byId("powerful").checked = Boolean(state.powerful);
+            updateTemperatureDisplay();
+          }
+        }
+      } catch (error) {
+        byId("statusDot").classList.remove("online");
+        byId("statusText").textContent = "API接続失敗";
+      }
+    }
+
+    byId("tempDown").addEventListener("click", () => {
+      setTemperature = Math.max(16, setTemperature - 1);
+      editing = true;
+      updateTemperatureDisplay();
+    });
+
+    byId("tempUp").addEventListener("click", () => {
+      setTemperature = Math.min(30, setTemperature + 1);
+      editing = true;
+      updateTemperatureDisplay();
+    });
+
+    document.querySelectorAll("select, input").forEach((element) => {
+      element.addEventListener("change", () => {
+        editing = true;
+      });
+    });
+
+    byId("quiet").addEventListener("change", () => {
+      if (byId("quiet").checked) {
+        byId("powerful").checked = false;
+      }
+    });
+
+    byId("powerful").addEventListener("change", () => {
+      if (byId("powerful").checked) {
+        byId("quiet").checked = false;
+      }
+    });
+
+    byId("applyButton").addEventListener("click", () => {
+      sendCommand({
+        power: currentPower,
+        mode: byId("mode").value,
+        temperature: setTemperature,
+        fan: byId("fan").value,
+        swing_vertical: byId("swing").value,
+        quiet: byId("quiet").checked,
+        powerful: byId("powerful").checked
+      });
+    });
+
+    byId("powerButton").addEventListener("click", async () => {
+      const nextPower = !currentPower;
+      await sendCommand({ power: nextPower });
+    });
+
+    let activeHistoryMetric = "temperature";
+    let historyPoints = [];
+
+    function openHistory(metric) {
+      activeHistoryMetric = metric;
+
+      byId("historyTitle").textContent =
+        metric === "temperature" ? "室温" : "湿度";
+
+      byId("historyModal").hidden = false;
+      loadHistory();
+    }
+
+    function closeHistory() {
+      byId("historyModal").hidden = true;
+    }
+
+    async function loadHistory() {
+      const hours = Number(byId("historyRange").value);
+      const message = byId("chartMessage");
+
+      message.textContent = "読み込み中...";
+
+      try {
+        const response = await fetch(
+          `/api/aircon/history?hours=${hours}`,
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        historyPoints = result.points || [];
+
+        if (historyPoints.length === 0) {
+          message.textContent = "まだ履歴がありません";
+          clearHistoryChart();
+          return;
+        }
+
+        message.textContent = "";
+        drawHistoryChart();
+      } catch (error) {
+        message.textContent = `取得失敗: ${error.message}`;
+        clearHistoryChart();
+      }
+    }
+
+    function clearHistoryChart() {
+      const canvas = byId("historyChart");
+      const context = canvas.getContext("2d");
+      context.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawHistoryChart() {
+      const canvas = byId("historyChart");
+      const rectangle = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+
+      canvas.width = Math.floor(rectangle.width * ratio);
+      canvas.height = Math.floor(rectangle.height * ratio);
+
+      const context = canvas.getContext("2d");
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+      const width = rectangle.width;
+      const height = rectangle.height;
+
+      const padding = {
+        top: 20,
+        right: 16,
+        bottom: 42,
+        left: 48
+      };
+
+      const values = historyPoints
+        .map((point) => point[activeHistoryMetric])
+        .filter((value) => Number.isFinite(value));
+
+      if (values.length === 0) {
+        byId("chartMessage").textContent = "表示できるデータがありません";
+        return;
+      }
+
+      let minimum = Math.min(...values);
+      let maximum = Math.max(...values);
+
+      if (minimum === maximum) {
+        minimum -= 1;
+        maximum += 1;
+      }
+
+      const margin = Math.max((maximum - minimum) * 0.12, 0.5);
+      minimum -= margin;
+      maximum += margin;
+
+      const chartWidth = width - padding.left - padding.right;
+      const chartHeight = height - padding.top - padding.bottom;
+
+      context.clearRect(0, 0, width, height);
+
+      context.font = "12px system-ui";
+      context.strokeStyle = "#273244";
+      context.fillStyle = "#8d9aae";
+      context.lineWidth = 1;
+
+      for (let index = 0; index <= 4; index += 1) {
+        const y = padding.top + chartHeight * index / 4;
+        const value = maximum - (maximum - minimum) * index / 4;
+
+        context.beginPath();
+        context.moveTo(padding.left, y);
+        context.lineTo(width - padding.right, y);
+        context.stroke();
+
+        context.textAlign = "right";
+        context.fillText(
+          value.toFixed(1),
+          padding.left - 8,
+          y + 4
+        );
+      }
+
+      const firstTimestamp = historyPoints[0].timestamp;
+      const lastTimestamp =
+        historyPoints[historyPoints.length - 1].timestamp;
+
+      const timestampRange = Math.max(
+        lastTimestamp - firstTimestamp,
+        1
+      );
+
+      const getX = (timestamp) =>
+        padding.left
+        + ((timestamp - firstTimestamp) / timestampRange) * chartWidth;
+
+      const getY = (value) =>
+        padding.top
+        + ((maximum - value) / (maximum - minimum)) * chartHeight;
+
+      context.beginPath();
+
+      let started = false;
+
+      historyPoints.forEach((point) => {
+        const value = point[activeHistoryMetric];
+
+        if (!Number.isFinite(value)) {
+          return;
+        }
+
+        const x = getX(point.timestamp);
+        const y = getY(value);
+
+        if (!started) {
+          context.moveTo(x, y);
+          started = true;
+        } else {
+          context.lineTo(x, y);
+        }
+      });
+
+      context.strokeStyle =
+        activeHistoryMetric === "temperature"
+          ? "#ff765f"
+          : "#49a7ff";
+
+      context.lineWidth = 3;
+      context.lineJoin = "round";
+      context.lineCap = "round";
+      context.stroke();
+
+      const hours = Number(byId("historyRange").value);
+
+      [firstTimestamp, lastTimestamp].forEach((timestamp, index) => {
+        const date = new Date(timestamp * 1000);
+
+        const label = hours >= 168
+          ? date.toLocaleDateString("ja-JP", {
+              month: "numeric",
+              day: "numeric"
+            })
+          : date.toLocaleTimeString("ja-JP", {
+              hour: "2-digit",
+              minute: "2-digit"
+            });
+
+        context.textAlign = index === 0 ? "left" : "right";
+        context.fillStyle = "#8d9aae";
+
+        context.fillText(
+          label,
+          index === 0 ? padding.left : width - padding.right,
+          height - 14
+        );
+      });
+    }
+
+    byId("temperatureCard").addEventListener(
+      "click",
+      () => openHistory("temperature")
+    );
+
+    byId("humidityCard").addEventListener(
+      "click",
+      () => openHistory("humidity")
+    );
+
+    byId("closeHistory").addEventListener("click", closeHistory);
+    byId("historyBackdrop").addEventListener("click", closeHistory);
+    byId("historyRange").addEventListener("change", loadHistory);
+    window.addEventListener("resize", () => {
+      if (!byId("historyModal").hidden && historyPoints.length > 0) {
+        drawHistoryChart();
+      }
+    });
+
+    updateTemperatureDisplay();
+    refreshStatus();
+    setInterval(refreshStatus, 3000);
+  </script>
+</body>
+</html>

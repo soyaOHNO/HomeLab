@@ -1,0 +1,22 @@
+# Credentials
+.env
+mosquitto/config/passwd
+firmware/**/secrets.h
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+server/data/
+*.db
+
+# Arduino
+*.bin
+*.elf
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Local migration backup
+migration-backup/
